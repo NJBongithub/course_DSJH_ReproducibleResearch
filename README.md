@@ -23,4 +23,11 @@ On Git Bash (as needed):
 cd ~/datasciencecoursera
 git add -A
 git commit -m "message must be entered"
+git pull
 git push
+
+Branch
+
+git checkput -b branchname     this creates a branch
+got branch     this switches into it
+got checkout master     this switches back to master
