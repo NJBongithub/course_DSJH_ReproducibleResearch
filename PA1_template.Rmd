@@ -1,0 +1,94 @@
+---
+title: "Assignment 1"
+author: "NJB"
+date: "Sunday, January 18, 2015"
+output: html_document
+---
+
+###Loading and preprocessing the data
+
+```{r}
+setwd("~/..")
+setwd("Desktop/LIFE/Courses/Coursera/DSJH/5_ReproducibleResearch")
+d <- read.csv(file="activity.csv",head=TRUE,sep=",")
+```
+
+###What is mean total number of steps taken per day?
+
+Histogram of the total number of steps taken each day.
+```{r}
+dayTots <- aggregate(steps~date, d, sum)
+hist(dayTots$steps, xlab = "total steps in a day", ylab = "number of days", main = "Histogram")
+```
+
+The mean number of steps taken per day is:
+```{r}
+mean(dayTots$steps, na.rm = TRUE)
+```
+
+The median is:
+```{r}
+median(dayTots$steps, na.rm = TRUE)
+```
+
+###What is the average daily activity pattern?
+
+Time series plot of the average number of steps taken in each 5-minute interval
+```{r}
+IntervalMeans <- aggregate(steps~interval, d, mean)
+plot(IntervalMeans$interval, IntervalMeans$steps, xlab= "5 min intervals", ylab= "mean number of steps", type='l', main = "Daily Pattern") 
+```
+
+The interval with the largest number of steps is interval number:
+```{r}
+d_max <- subset(IntervalMeans, IntervalMeans$steps == max(IntervalMeans$steps))
+d_max$interval
+```
+
+###Imputing missing values
+
+1. Number of missing values
+```{r}
+NAindex <- which(is.na(d))
+length(NAindex)
+```
+
+2. Strategy for filling NAs: 
+I plan to use the mean for the corresponding 5 min time interval across days.
+
+3. New data set
+```{r}
+new_d <-d
+for (i in 1:length(NAindex)) {
+    meanForThisInterval <- subset(
+        IntervalMeans, 
+        new_d[NAindex[i], ]$interval == IntervalMeans$interval
+        )$steps
+    new_d[NAindex[i], ]$steps <- meanForThisInterval
+}
+```
+
+4. Histogram of the total number of steps taken each day
+
+```{r}
+dayTots <- aggregate(steps~date, new_d, sum)
+hist(dayTots$steps, xlab = "total steps in a day", ylab = "number of days", main = "Histogram")
+```
+
+Mean total number of steps taken per day. 
+
+```{r}
+mean(dayTots$steps, na.rm = TRUE)
+```
+
+Median total number of steps taken per day. 
+
+```{r}
+median(dayTots$steps, na.rm = TRUE)
+```
+
+These values are similar to the estimates from the first part of the assignment. Using interval means to impute missing data only reduced the variance about the central tendency measures of the intervals (means, medians). 
+
+###Are there differences in activity patterns between weekdays and weekends?
+
+I ran out of time. Dock my points!
