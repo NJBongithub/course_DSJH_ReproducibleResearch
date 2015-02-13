@@ -1,0 +1,157 @@
+---
+title: "DSJH_ML_Assignment"
+author: "NJB"
+date: "Friday, January 23, 2015"
+output: html_document
+---
+
+The data come from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants who performed barbell lifts correctly and incorrectly in 5 different ways (http://groupware.les.inf.puc-rio.br/har). The Variable "classe" indicates the form of the dumbbell lift: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). First, we load the data and some libraries. The table shows the number of observation for each classe in the training set. 
+
+```{r echo=FALSE}
+setwd("~/..")
+setwd("Desktop/LIFE/Courses/Coursera/DSJH/8_ML/Assignment")
+library(caret); library(randomForest)
+training = read.csv("pml-training.csv")  # pre-partitioned training data 
+testing = read.csv("pml-testing.csv")  # pre-partitioned testing data 
+table(training$classe)
+```
+
+##Pre-processing 
+
+Some of the candidate predictors hold little promise from the start. The next steps aim to identify and exclude those predictors. At the same time, missing values for promissing candidate predictors will be replaced with predictor-specific medians (numeric predictors) and modes (nominal predictors).
+
+Before pre-processing, the number of candidate predictors is:
+```{r, echo=FALSE}
+dim(training)[2] - 1
+```
+
+```{r, echo=FALSE}
+#1. Near-empty rows: Rows that don't contain values from the belt, forearm, arm, or dumbbell sensors but only contain values identifying the person exercising and the time of the exercise are excluded. 
+
+#2. Person and Time:  
+```
+
+Predictors that identify the person or the timestamp are excluded. The hope is to generalize the model beyond 6 unique individuals (even though the testing data are specific to them). Also I don't plant to extract time of day or day of week, etc., or to model lower within-subject variance.
+
+```{r}
+training <- training[ , 8:160]
+testing <- testing[ , 8:160]
+```
+
+```{r, echo=FALSE}
+#3. Removal of all-NA predictors and Missing value imputation
+```
+
+For each remaining predictor, missing values are replaced with the median (if numeric). Predictors with too much missing data to compute a median or a mode are excluded. The outcome variable is separated from the predictors.
+
+```{r}
+d2<-training
+removeThisVar <- vector(mode="numeric", length=0)
+for (pred in 1:dim(d2)[2]-1) {
+    if(is.numeric(d2[ , pred])) {
+        centraltendency <- median(d2[ , pred])
+    } else {
+        #print("need to calculate mode")
+        centraltendency<-NA
+    }
+    if(is.na(centraltendency)) {
+       removeThisVar <- c(removeThisVar, pred)
+    } else {
+        NAindex <- which(is.na(d2[ , pred]))
+        if(length(NAindex) > 0) {
+            for (i in 1:length(NAindex)) {
+                d2[NAindex[i], pred] <- centraltendency
+            }
+        }
+    }
+}
+filteredDescr <- d2[ , -removeThisVar]
+filteredTesting <- testing[ , -removeThisVar]
+```
+
+After exclusion, the number of predictors is:
+```{r, echo=FALSE}
+dim(filteredDescr)[2] - 1
+```
+
+```{r, echo=FALSE}
+#3. Predictors with near-zero variance (Will also capture predictors with a lot of missing data I think)
+```
+
+Some predictors have little variance and can be excluded. Near zero variance in the training set is detected below. The variables that are identified as having near zero variance are then removed from both the training and the testing sets.
+
+```{r}
+nzv <- nearZeroVar(filteredDescr)
+if(length(nzv)>0){
+    filteredTraining <- filteredDescr[ , -nzv]
+    filteredTesting <- filteredTesting[ , -nzv]    
+} else {
+    filteredTraining <- filteredDescr
+    filteredTesting <- filteredTesting        
+}
+```
+
+After exclusion, the number of predictors is:
+```{r, echo=FALSE}
+dim(filteredTraining)[2] - 1
+```
+
+Better pre-processing to narrow the field of predictors would improve the random forest process. I could have pruned more variables by looking for colinear ones, correlated ones, or redundantly predictive ones (with PCA) but I kept pre-processing to a minimum. However I stop here.
+
+I use a random forest technique to develop accurate predictions based on the performance of several decision trees. The final model has an error rate of 0.28%, i.e. an accuracy of above 99%.
+
+```{r}
+#modFit_RF <- train(classe ~ .,data=filteredTraining, method="rf", prox=TRUE)
+#modFit_RF <- randomForest(classe ~ ., data=filteredTraining, importance = TRUE, xtest=filteredTesting) # I don't have outcomes for testing set
+modFit_RF <- randomForest(classe ~ ., data=filteredTraining, importance = TRUE)
+modFit_RF
+```
+
+The confusion matrix (on the training set) for the Random Forest classifier I've trained is:
+```{r}
+modFit_RF$confusion
+```
+
+Predictions for the testing set are saved to an external file:
+```{r}
+Prediction <- predict(modFit_RF, filteredTesting)
+#write.csv(predict, file = "firstforest.csv", row.names = FALSE)
+```
+
+Predictions have now been made. But the relationship between the variables and the outcomes is opaque. 
+
+The following lists the best predictors in order of importance.
+
+```{r}
+varImpPlot(modFit_RF)
+```
+
+The rfcv function helps better see the point when having more predictors barely increases information gain. 
+
+```{r}
+lastPredColumn <- dim(filteredTraining)[2] - 1
+result <- rfcv(filteredTraining[1:lastPredColumn], filteredTraining$classe, cv.fold=5, step=0.8)
+with(result, plot(n.var, error.cv, log="x", type="o", lwd=2))
+result$error.cv
+```
+
+A set of 9 variables produces an acceptable error rate. Gains in accuracy above that number are negligible. The 9 most important variables were shown in an earlier graph. I now create new training and testing sets that are reduced to those 9 variables plus the outcome. I could run random forest again and generate a new predictive model with lower accuracy on the training set but less over-fitting and better accuracy on the testing set. I won't just to keep the assignment simple. I can however use these reduced data sets to perform one last task: generating an interpretable dendogram.
+
+```{r}
+smTraining <- filteredTraining[ , c("yaw_belt", "roll_belt", "pitch_belt", "magnet_dumbbell_z", "gyros_arm_y", "magnet_dumbbell_y", "pitch_forearm", "accel_dumbbell_y", "magnet_forearm_z", "classe")]
+smTesting <- filteredTesting[ , c("yaw_belt", "roll_belt", "pitch_belt", "magnet_dumbbell_z", "gyros_arm_y", "magnet_dumbbell_y", "pitch_forearm", "accel_dumbbell_y", "magnet_forearm_z")]
+```
+
+I train a single decision tree on the 9 variables and I print its dendogram. Seeing a decision tree helps understand which variables and cut-off values are associated with which outcomes. 
+
+```{r}
+modFit <- train(classe ~ .,method="rpart",data=smTraining)
+plot(modFit$finalModel, uniform=TRUE, main="Classification Tree")
+text(modFit$finalModel, use.n=TRUE, all=TRUE, cex=.8)
+predict(modFit,newdata=smTesting)
+modFit
+```
+
+The accuracy of this tree is 0.535
+
+The dendogram reflects the purposeful way in which participants were asked to carry out the exercises: for example, the first fork is a measure of roll_belt -- recall that participants were asked to throw their hips to the front (Class E). And so on.
