@@ -1,7 +1,7 @@
 ---
 title: "Assignment 1"
 author: "NJB"
-date: "Sunday, January 18, 2015"
+date: "Thursday, February 12, 2015"
 output: html_document
 ---
 
@@ -21,15 +21,15 @@ dayTots <- aggregate(steps~date, d, sum)
 hist(dayTots$steps, xlab = "total steps in a day", ylab = "number of days", main = "Histogram")
 ```
 
-The mean number of steps taken per day is:
-```{r}
-mean(dayTots$steps, na.rm = TRUE)
+Central Tendencies:
+
+```{r, echo=FALSE}
+myMean <- mean(dayTots$steps, na.rm = TRUE)
+myMedian <- median(dayTots$steps, na.rm = TRUE)
 ```
 
-The median is:
-```{r}
-median(dayTots$steps, na.rm = TRUE)
-```
+Mean total number of steps taken per day = `r myMean`.
+Median total number of steps taken per day = `r myMedian`.
 
 ###What is the average daily activity pattern?
 
@@ -75,17 +75,15 @@ dayTots <- aggregate(steps~date, new_d, sum)
 hist(dayTots$steps, xlab = "total steps in a day", ylab = "number of days", main = "Histogram")
 ```
 
-Mean total number of steps taken per day. 
+Central Tendencies: 
 
-```{r}
-mean(dayTots$steps, na.rm = TRUE)
+```{r, echo=FALSE}
+myMean <- mean(dayTots$steps, na.rm = TRUE)
+myMedian <- median(dayTots$steps, na.rm = TRUE)
 ```
 
-Median total number of steps taken per day. 
-
-```{r}
-median(dayTots$steps, na.rm = TRUE)
-```
+Mean total number of steps taken per day = `r myMean`.
+Median total number of steps taken per day = `r myMedian`.
 
 These values are similar to the estimates from the first part of the assignment. Using interval means to impute missing data only reduced the variance about the central tendency measures of the intervals (means, medians). 
 
