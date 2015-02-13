@@ -1,33 +1,33 @@
 # courses
-Submissions for courses
+Submissions for courses  
 
-##Setting up Git Bash
+###Setting up Git Bash  
   
-On Git Bash (once):
--git config --global user.name "NJBongithub"
--git config --global user.email "NJBongithub@gmail.com"
--git config --list
--exit
+On Git Bash (once):  
+git config --global user.name "NJBongithub"
+git config --global user.email "NJBongithub@gmail.com"  
+git config --list  
+exit  
   
-##Linking a local folder to GitHub repo
+###Linking a local folder to GitHub repo  
   
-On Git Bash (once):
--mkdir ~/datasciencecoursera
--cd ~/datasciencecoursera
--git init
--git remote set-url --add origin https://github.com/NJBongithub/courses.git
+On Git Bash (once):  
+mkdir ~/datasciencecoursera  
+cd ~/datasciencecoursera  
+git init  
+git remote set-url --add origin https://github.com/NJBongithub/courses.git  
   
-##Sync'ing changes as you go
+###Sync'ing changes as you go  
   
-On Git Bash (as needed):
--cd ~/datasciencecoursera
--git add -A
--git commit -m "message must be entered"
--git pull
--git push
+On Git Bash (as needed):  
+cd ~/datasciencecoursera  
+git add -A  
+git commit -m "message must be entered"  
+git pull  
+git push  
 
-##Branch
+###Branch  
   
--git checkput -b branchname     this creates a branch
--git branch     this switches into it
--git checkout master     this switches back to master
+git checkput -b branchname     this creates a branch  
+git branch     this switches into it  
+git checkout master     this switches back to master  
